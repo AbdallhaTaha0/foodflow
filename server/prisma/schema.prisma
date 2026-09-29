@@ -1,0 +1,70 @@
+// FoodFlow M1 — foundation schema (Neon PostgreSQL).
+// Extended in M2 (auth) / M3 (catalog) / M4 (orders). See SCHEMA.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RestaurantRole {
+  OWNER
+  MANAGER
+  KITCHEN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships RestaurantMember[]
+
+  @@map("users")
+}
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  isOpen      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members RestaurantMember[]
+
+  @@index([slug])
+  @@map("restaurants")
+}
+
+model RestaurantMember {
+  id           String         @id @default(cuid())
+  userId       String
+  restaurantId String
+  role         RestaurantRole
+  createdAt    DateTime       @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, restaurantId])
+  @@index([userId])
+  @@index([restaurantId])
+  @@map("restaurant_members")
+}

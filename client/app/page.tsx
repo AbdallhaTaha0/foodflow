@@ -1,0 +1,55 @@
+import { HealthPanel } from "@/components/health-panel";
+import { API_BASE, type HealthData } from "@/lib/api";
+
+// Server Component by default (AGENTS.md). Fetches backend health
+// server-side; the live client probe sits in <HealthPanel />.
+async function getServerHealth(): Promise<HealthData | null> {
+  try {
+    const res = await fetch(`${API_BASE}/health`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { success: boolean; data: HealthData };
+    return body.success ? body.data : null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function HomePage() {
+  const serverHealth = await getServerHealth();
+
+  return (
+    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-6 py-16">
+      <header className="flex flex-col gap-2">
+        <p className="text-sm font-medium tracking-wide text-neutral-500">
+          M1 · Foundation
+        </p>
+        <h1 className="text-4xl font-bold">
+          Food<span className="text-primary">Flow</span>
+        </h1>
+        <p className="text-neutral-600">
+          Restaurant ordering and management platform. Foundation milestone:
+          frontend and backend are connected.
+        </p>
+      </header>
+
+      <section
+        aria-label="Backend connectivity"
+        className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4"
+      >
+        <h2 className="text-lg font-semibold">Backend connectivity</h2>
+        {serverHealth ? (
+          <p role="status" className="text-sm text-green-700">
+            Server render reached the API (uptime {serverHealth.uptimeSeconds}
+            s).
+          </p>
+        ) : (
+          <p role="status" className="text-sm text-amber-700">
+            Server render could not reach the API yet — is it running on{" "}
+            {API_BASE}?
+          </p>
+        )}
+        <HealthPanel />
+      </section>
+    </main>
+  );
+}
